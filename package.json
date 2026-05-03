@@ -1,0 +1,49 @@
+{
+    "name":  "amazingzz",
+    "version":  "0.1.0",
+    "description":  "Configure Codex CLI, OpenClaw, and Hermes for the AmazingZZ sub2api gateway.",
+    "type":  "module",
+    "bin":  {
+                "amazingzz":  "dist/index.js"
+            },
+    "files":  [
+                  "dist",
+                  "README.md"
+              ],
+    "engines":  {
+                    "node":  "\u003e=18"
+                },
+    "scripts":  {
+                    "build":  "tsc -p tsconfig.json",
+                    "dev":  "tsx src/index.ts",
+                    "test":  "vitest run",
+                    "check":  "tsc -p tsconfig.json --noEmit"
+                },
+    "dependencies":  {
+                         "@inquirer/prompts":  "^7.2.1",
+                         "commander":  "^12.1.0",
+                         "yaml":  "^2.6.1"
+                     },
+    "devDependencies":  {
+                            "@types/node":  "^22.10.2",
+                            "tsx":  "^4.19.2",
+                            "typescript":  "^5.7.2",
+                            "vitest":  "^2.1.8"
+                        },
+    "keywords":  [
+                     "codex",
+                     "openclaw",
+                     "hermes",
+                     "openai",
+                     "sub2api"
+                 ],
+    "license":  "MIT",
+    "repository":  {
+                       "type":  "git",
+                       "url":  "git+https://github.com/zhangzhiwei0905/amazingzz.git"
+                   },
+    "bugs":  {
+                 "url":  "https://github.com/zhangzhiwei0905/amazingzz/issues"
+             },
+    "homepage":  "https://github.com/zhangzhiwei0905/amazingzz#readme"
+}
