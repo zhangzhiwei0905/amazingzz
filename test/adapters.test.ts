@@ -45,6 +45,27 @@ describe("adapters", () => {
     expect((config.model_providers as any).amazingzz.env_key).toBe("AMAZINGZZ_API_KEY");
   });
 
+  it("preserves existing Codex MCP server args as a TOML array", async () => {
+    const filePath = path.join(homeDir, ".codex", "config.toml");
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, [
+      '[mcp_servers.omx_code_intel]',
+      'command = "node"',
+      'args = ["D:\\\\Document\\\\VSCodeProjects\\\\oh-my-codex\\\\dist\\\\mcp\\\\code-intel-server.js"]',
+      ''
+    ].join("\n"), "utf8");
+
+    await codexAdapter.setup({ ...setupContext, homeDir });
+    const text = await fs.readFile(filePath, "utf8");
+    const config = parseToml(text);
+
+    expect((config.mcp_servers as any).omx_code_intel.args).toEqual([
+      "D:\\Document\\VSCodeProjects\\oh-my-codex\\dist\\mcp\\code-intel-server.js"
+    ]);
+    expect(text).toContain('args = ["D:');
+    expect(text).not.toContain('args = "[');
+  });
+
   it("writes Codex config without creating other client configs", async () => {
     await codexAdapter.setup({ ...setupContext, homeDir });
 

@@ -1,4 +1,5 @@
-type TomlValue = string | number | boolean | TomlObject;
+type TomlScalar = string | number | boolean;
+type TomlValue = TomlScalar | TomlScalar[] | TomlObject;
 export type TomlObject = { [key: string]: TomlValue };
 
 export function parseToml(text: string): TomlObject {
@@ -58,6 +59,7 @@ function appendTable(lines: string[], prefix: string, table: TomlObject): void {
 function stripComment(line: string): string {
   let quoted = false;
   let escaped = false;
+  let arrayDepth = 0;
   for (let i = 0; i < line.length; i += 1) {
     const char = line[i];
     if (escaped) {
@@ -69,12 +71,15 @@ function stripComment(line: string): string {
       continue;
     }
     if (char === '"') quoted = !quoted;
-    if (char === "#" && !quoted) return line.slice(0, i);
+    if (!quoted && char === "[") arrayDepth += 1;
+    if (!quoted && char === "]" && arrayDepth > 0) arrayDepth -= 1;
+    if (char === "#" && !quoted && arrayDepth === 0) return line.slice(0, i);
   }
   return line;
 }
 
-function parseValue(value: string): Exclude<TomlValue, TomlObject> {
+function parseValue(value: string): TomlScalar | TomlScalar[] {
+  if (value.startsWith("[") && value.endsWith("]")) return parseArray(value);
   if (value.startsWith('"') && value.endsWith('"')) return JSON.parse(value);
   if (value === "true") return true;
   if (value === "false") return false;
@@ -82,7 +87,39 @@ function parseValue(value: string): Exclude<TomlValue, TomlObject> {
   return Number.isFinite(number) ? number : value;
 }
 
-function formatValue(value: Exclude<TomlValue, TomlObject>): string {
+function parseArray(value: string): TomlScalar[] {
+  const inner = value.slice(1, -1).trim();
+  if (!inner) return [];
+  return splitArrayItems(inner).map((item) => parseValue(item.trim()) as TomlScalar);
+}
+
+function splitArrayItems(value: string): string[] {
+  const items: string[] = [];
+  let start = 0;
+  let quoted = false;
+  let escaped = false;
+  for (let i = 0; i < value.length; i += 1) {
+    const char = value[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (char === '"') quoted = !quoted;
+    if (char === "," && !quoted) {
+      items.push(value.slice(start, i));
+      start = i + 1;
+    }
+  }
+  items.push(value.slice(start));
+  return items.filter((item) => item.trim().length > 0);
+}
+
+function formatValue(value: TomlScalar | TomlScalar[]): string {
+  if (Array.isArray(value)) return `[${value.map(formatValue).join(", ")}]`;
   if (typeof value === "string") return JSON.stringify(value);
   return String(value);
 }

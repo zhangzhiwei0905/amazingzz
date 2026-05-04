@@ -1,6 +1,6 @@
 {
     "name": "amazingzz",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "description": "Configure Codex CLI, OpenClaw, Hermes, and Claude Code for the AmazingZZ sub2api gateway.",
     "type": "module",
     "bin": {
