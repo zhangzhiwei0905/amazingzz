@@ -2,9 +2,13 @@ import { API_KEY_ENV, PROVIDER_ID } from "../constants.js";
 import type { Adapter, ApplyResult, CheckContext, CheckResult, SetupContext, ApiMode } from "../types.js";
 import { readJson, writeJsonWithBackup } from "../utils/fs.js";
 import { configPath } from "../utils/paths.js";
-import { probeApiMode } from "../utils/network.js";
+import { probeEndpoint } from "../utils/network.js";
 
 type JsonObject = Record<string, unknown>;
+
+const OPENCLAW_API = "openai-completions";
+const OPENCLAW_API_MODE: ApiMode = "chat";
+const OPENCLAW_RESPONSES_WARNING = "OpenClaw should use openai-completions with sub2api; openai-responses can fail in multi-turn sessions due to non-persisted rs_ items";
 
 export const openClawAdapter: Adapter = {
   target: "openclaw",
@@ -12,8 +16,8 @@ export const openClawAdapter: Adapter = {
     const filePath = getPath(context.homeDir);
     const config = await readJson(filePath);
     const modeProbe = context.network
-      ? await probeApiMode(context.baseUrl, context.apiKey, context.model, true)
-      : { mode: "responses" as ApiMode, detail: "network check skipped" };
+      ? await probeEndpoint(context.baseUrl, context.apiKey, context.model, OPENCLAW_API_MODE)
+      : { ok: true, detail: "network check skipped" };
 
     const models = ensureObject(config, "models");
     models.mode = "merge";
@@ -22,7 +26,7 @@ export const openClawAdapter: Adapter = {
       ...(isObject(providers[PROVIDER_ID]) ? providers[PROVIDER_ID] as JsonObject : {}),
       baseUrl: context.baseUrl,
       apiKey: `\${${API_KEY_ENV}}`,
-      api: modeProbe.mode === "responses" ? "openai-responses" : "openai-completions",
+      api: OPENCLAW_API,
       models: [{ id: context.model, name: context.model }]
     };
 
@@ -34,11 +38,11 @@ export const openClawAdapter: Adapter = {
     const backupPath = await writeJsonWithBackup(filePath, config, context.dryRun);
     return {
       target: "openclaw",
-      status: "pass",
+      status: modeProbe.ok ? "pass" : "warn",
       path: filePath,
       message: context.dryRun ? "OpenClaw config would be updated" : `OpenClaw config updated (${modeProbe.detail})`,
       backupPath,
-      apiMode: modeProbe.mode
+      apiMode: OPENCLAW_API_MODE
     };
   },
 
@@ -52,17 +56,17 @@ export const openClawAdapter: Adapter = {
     const baseUrl = provider?.baseUrl;
     if (baseUrl && context.expectedBaseUrl && baseUrl !== context.expectedBaseUrl) details.push(`baseUrl is ${String(baseUrl)}`);
     if (provider?.apiKey !== `\${${API_KEY_ENV}}`) details.push(`apiKey should reference \${${API_KEY_ENV}}`);
+    if (provider && provider.api !== OPENCLAW_API) details.push(OPENCLAW_RESPONSES_WARNING);
 
     const primary = getPrimaryModel(config);
     if (!primary || !String(primary).startsWith(`${PROVIDER_ID}/`)) details.push(`default model is ${String(primary ?? "missing")}`);
     if (!process.env[API_KEY_ENV] && !context.apiKey) details.push(`${API_KEY_ENV} is not set`);
 
-    const apiMode = provider?.api === "openai-completions" ? "chat" : "responses";
+    const apiMode = provider?.api === OPENCLAW_API ? OPENCLAW_API_MODE : "responses";
     const apiKey = context.apiKey || process.env[API_KEY_ENV];
     if (context.network && baseUrl && apiKey) {
-      const probe = await probeApiMode(String(baseUrl), apiKey, modelFromProvider(provider) || context.model || "gpt-5.5", true);
+      const probe = await probeEndpoint(String(baseUrl), apiKey, modelFromProvider(provider) || context.model || "gpt-5.5", OPENCLAW_API_MODE);
       if (!probe.ok) details.push(`network: ${probe.detail}`);
-      else if (apiMode === "responses" && probe.mode === "chat") details.push("responses failed but chat fallback is reachable");
     }
 
     return {

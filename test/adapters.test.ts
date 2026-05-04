@@ -88,7 +88,38 @@ describe("adapters", () => {
     expect(config.models.mode).toBe("merge");
     expect(config.models.providers.amazingzz.baseUrl).toBe("https://gateway.example.com/v1");
     expect(config.models.providers.amazingzz.apiKey).toBe("${AMAZINGZZ_API_KEY}");
+    expect(config.models.providers.amazingzz.api).toBe("openai-completions");
+    expect(config.models.providers.amazingzz.models).toEqual([{ id: DEFAULT_MODEL, name: DEFAULT_MODEL }]);
     expect(config.agents.defaults.model.primary).toBe(`amazingzz/${DEFAULT_MODEL}`);
+  });
+
+  it("flags OpenClaw responses API config as invalid for sub2api", async () => {
+    const filePath = path.join(homeDir, ".openclaw", "openclaw.json");
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify({
+      models: {
+        providers: {
+          amazingzz: {
+            baseUrl: "https://gateway.example.com/v1",
+            apiKey: "${AMAZINGZZ_API_KEY}",
+            api: "openai-responses",
+            models: [{ id: DEFAULT_MODEL, name: DEFAULT_MODEL }]
+          }
+        }
+      },
+      agents: { defaults: { model: { primary: `amazingzz/${DEFAULT_MODEL}` } } }
+    }), "utf8");
+
+    const result = await openClawAdapter.check({
+      homeDir,
+      network: false,
+      apiKey: "test-key",
+      expectedBaseUrl: "https://gateway.example.com/v1"
+    });
+
+    expect(result.status).toBe("fail");
+    expect(result.apiMode).toBe("responses");
+    expect(result.details).toContain("OpenClaw should use openai-completions with sub2api; openai-responses can fail in multi-turn sessions due to non-persisted rs_ items");
   });
 
   it("writes Claude Code Anthropic-compatible env settings with Claude-facing model", async () => {
