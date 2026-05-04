@@ -2,4 +2,4 @@ export const PROVIDER_ID = "amazingzz";
 export const PROVIDER_NAME = "AmazingZZ";
 export const API_KEY_ENV = "AMAZINGZZ_API_KEY";
 export const DEFAULT_MODEL = "gpt-5.5";
-export const DEFAULT_TARGETS = ["codex", "openclaw", "hermes"] as const;
+export const DEFAULT_TARGETS = ["codex", "openclaw", "hermes", "claude-code"] as const;

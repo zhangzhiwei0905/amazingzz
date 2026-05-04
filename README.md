@@ -7,6 +7,7 @@ It currently supports:
 - Codex CLI
 - OpenClaw
 - Hermes Agent
+- Claude Code
 
 The tool focuses on the two settings that matter for gateway access: `base_url` and `api_key`. The default model is `gpt-5.5`.
 
@@ -41,6 +42,12 @@ Check without network requests:
 npx amazingzz check --no-network
 ```
 
+
+## API Compatibility
+
+Codex CLI, OpenClaw, and Hermes are configured against OpenAI-compatible gateway routes such as `/v1/responses` or `/v1/chat/completions`.
+
+Claude Code is different: it expects Anthropic-compatible Messages API behavior at `/v1/messages`. A gateway that only implements OpenAI-compatible APIs will not be enough for Claude Code unless it also translates Anthropic Messages requests.
 ## Commands
 
 ### `setup`
@@ -56,7 +63,7 @@ Useful options:
 - `--base-url <url>`: AmazingZZ gateway URL. If `/v1` is missing, it is added automatically.
 - `--api-key <key>`: AmazingZZ API key.
 - `--model <model>`: model name. Defaults to `gpt-5.5`.
-- `--targets <list>`: comma-separated clients, for example `codex,openclaw,hermes`.
+- `--targets <list>`: comma-separated clients, for example `codex,openclaw,hermes,claude-code`.
 - `--yes`: non-interactive mode.
 - `--dry-run`: show planned changes without writing files.
 - `--json`: print machine-readable output.
@@ -129,6 +136,32 @@ custom_providers:
 
 On native Windows, Hermes is treated as WSL-first. Run the command inside WSL, or pass `--hermes-home` to point at the home directory that contains `.hermes/config.yaml`.
 
+
+### Claude Code
+
+Target file:
+
+```text
+~/.claude/settings.json
+```
+
+Claude Code uses the Anthropic Messages API shape, so this target requires your gateway to expose an Anthropic-compatible endpoint. This is separate from the OpenAI-compatible `/v1/responses` and `/v1/chat/completions` endpoints used by the other clients.
+
+The tool writes these environment variables under `env`:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://gateway.example.com",
+    "ANTHROPIC_API_KEY": "sk-xxx",
+    "ANTHROPIC_AUTH_TOKEN": "sk-xxx",
+    "ANTHROPIC_MODEL": "gpt-5.5",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION": "gpt-5.5"
+  }
+}
+```
+
+For Claude Code, the base URL is normalized as an Anthropic root URL. If the user enters `https://gateway.example.com/v1`, Claude Code receives `https://gateway.example.com`, because Claude Code appends `/v1/messages` itself.
 ## Development
 
 Install dependencies:

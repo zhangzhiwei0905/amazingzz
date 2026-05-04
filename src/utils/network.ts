@@ -1,4 +1,4 @@
-import { joinEndpoint } from "./url.js";
+import { joinAnthropicMessagesEndpoint, joinEndpoint } from "./url.js";
 import type { ApiMode } from "../types.js";
 
 export interface ProbeResult {
@@ -38,6 +38,29 @@ export async function probeEndpoint(baseUrl: string, apiKey: string, model: stri
     if (response.ok) return { ok: true, detail: `${endpoint} returned ${response.status}` };
     const text = await response.text();
     return { ok: false, detail: `${endpoint} returned ${response.status}${text ? `: ${text.slice(0, 180)}` : ""}` };
+  } catch (error) {
+    return { ok: false, detail: error instanceof Error ? error.message : String(error) };
+  }
+}
+export async function probeAnthropicEndpoint(baseUrl: string, apiKey: string, model: string): Promise<{ ok: boolean; detail: string }> {
+  try {
+    const response = await fetch(joinAnthropicMessagesEndpoint(baseUrl), {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+        "x-api-key": apiKey
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1,
+        messages: [{ role: "user", content: "ping" }]
+      })
+    });
+    if (response.ok) return { ok: true, detail: `messages returned ${response.status}` };
+    const text = await response.text();
+    return { ok: false, detail: `messages returned ${response.status}${text ? `: ${text.slice(0, 180)}` : ""}` };
   } catch (error) {
     return { ok: false, detail: error instanceof Error ? error.message : String(error) };
   }

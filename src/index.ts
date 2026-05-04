@@ -12,7 +12,7 @@ const program = new Command();
 
 program
   .name("amazingzz")
-  .description("Configure Codex CLI, OpenClaw, and Hermes for the AmazingZZ sub2api gateway")
+  .description("Configure Codex CLI, OpenClaw, Hermes, and Claude Code for the AmazingZZ sub2api gateway")
   .version("0.1.0");
 
 program
@@ -21,7 +21,7 @@ program
   .option("--base-url <url>", "AmazingZZ gateway base URL")
   .option("--api-key <key>", "AmazingZZ API key")
   .option("--model <model>", "Default model")
-  .option("--targets <targets>", "Comma-separated targets: codex,openclaw,hermes")
+  .option("--targets <targets>", "Comma-separated targets: codex,openclaw,hermes,claude-code")
   .option("--yes", "Run non-interactively; requires base URL and API key")
   .option("--dry-run", "Print what would change without writing files")
   .option("--json", "Output JSON")
@@ -64,7 +64,7 @@ program
   .option("--base-url <url>", "Expected AmazingZZ gateway base URL")
   .option("--api-key <key>", "API key to use for network checks")
   .option("--model <model>", "Model to use for network checks", DEFAULT_MODEL)
-  .option("--targets <targets>", "Comma-separated targets: codex,openclaw,hermes")
+  .option("--targets <targets>", "Comma-separated targets: codex,openclaw,hermes,claude-code")
   .option("--no-network", "Skip network checks")
   .option("--json", "Output JSON")
   .option("--hermes-home <path>", "Override Hermes home directory")
@@ -157,5 +157,3 @@ function printCheckResults(results: CheckResult[]): void {
 function printJson(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
 }
-
-

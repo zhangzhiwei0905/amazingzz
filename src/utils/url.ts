@@ -19,6 +19,16 @@ export function normalizeBaseUrl(input: string): string {
   return url.toString().replace(/\/$/, "");
 }
 
-export function joinEndpoint(baseUrl: string, endpoint: "responses" | "chat/completions" | "models"): string {
+export function normalizeAnthropicBaseUrl(input: string): string {
+  const normalized = normalizeBaseUrl(input);
+  return normalized.endsWith("/v1") ? normalized.slice(0, -3) : normalized;
+}
+
+export function joinEndpoint(baseUrl: string, endpoint: "responses" | "chat/completions" | "models" | "messages"): string {
   return `${baseUrl.replace(/\/$/, "")}/${endpoint}`;
+}
+
+export function joinAnthropicMessagesEndpoint(baseUrl: string): string {
+  const clean = baseUrl.replace(/\/$/, "");
+  return clean.endsWith("/v1") ? `${clean}/messages` : `${clean}/v1/messages`;
 }

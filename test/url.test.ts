@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeBaseUrl } from "../src/utils/url.js";
+import { normalizeAnthropicBaseUrl, normalizeBaseUrl } from "../src/utils/url.js";
 
 describe("normalizeBaseUrl", () => {
   it("adds protocol and /v1", () => {
@@ -12,5 +12,9 @@ describe("normalizeBaseUrl", () => {
 
   it("appends /v1 to custom paths", () => {
     expect(normalizeBaseUrl("https://api.example.com/proxy")).toBe("https://api.example.com/proxy/v1");
+  });
+  it("normalizes Anthropic base URLs without /v1", () => {
+    expect(normalizeAnthropicBaseUrl("https://api.example.com/v1")).toBe("https://api.example.com");
+    expect(normalizeAnthropicBaseUrl("api.example.com/proxy")).toBe("https://api.example.com/proxy");
   });
 });

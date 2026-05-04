@@ -2,7 +2,7 @@ import type { DEFAULT_TARGETS } from "./constants.js";
 
 export type Target = (typeof DEFAULT_TARGETS)[number];
 export type Status = "pass" | "warn" | "fail";
-export type ApiMode = "responses" | "chat";
+export type ApiMode = "responses" | "chat" | "anthropic";
 
 export interface SetupContext {
   baseUrl: string;

@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import YAML from "yaml";
+import { claudeCodeAdapter } from "../src/adapters/claude-code.js";
 import { codexAdapter } from "../src/adapters/codex.js";
 import { hermesAdapter } from "../src/adapters/hermes.js";
 import { openClawAdapter } from "../src/adapters/openclaw.js";
@@ -60,6 +61,17 @@ describe("adapters", () => {
     expect(config.agents.defaults.model.primary).toBe(`amazingzz/${DEFAULT_MODEL}`);
   });
 
+
+  it("writes Claude Code Anthropic-compatible env settings", async () => {
+    await claudeCodeAdapter.setup({ ...setupContext, homeDir });
+    const config = JSON.parse(await fs.readFile(path.join(homeDir, ".claude", "settings.json"), "utf8"));
+
+    expect(config.env.ANTHROPIC_BASE_URL).toBe("https://gateway.example.com");
+    expect(config.env.ANTHROPIC_API_KEY).toBe("test-key");
+    expect(config.env.ANTHROPIC_AUTH_TOKEN).toBe("test-key");
+    expect(config.env.ANTHROPIC_MODEL).toBe(DEFAULT_MODEL);
+    expect(config.env.ANTHROPIC_CUSTOM_MODEL_OPTION).toBe(DEFAULT_MODEL);
+  });
   it("writes Hermes named custom provider", async () => {
     await hermesAdapter.setup({ ...setupContext, homeDir });
     const config = YAML.parse(await fs.readFile(path.join(homeDir, ".hermes", "config.yaml"), "utf8"));
