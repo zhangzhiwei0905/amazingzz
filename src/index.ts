@@ -102,8 +102,8 @@ program.parseAsync(process.argv).catch((error: unknown) => {
 async function promptTargets(yes?: boolean): Promise<Target[]> {
   if (yes) return [...DEFAULT_TARGETS];
   return checkbox<Target>({
-    message: "Select clients to configure",
-    choices: DEFAULT_TARGETS.map((target) => ({ name: target, value: target, checked: true })),
+    message: "Select clients to configure. Press <space> to toggle, <a> to toggle all, <enter> to confirm.",
+    choices: DEFAULT_TARGETS.map((target) => ({ name: target, value: target, checked: false })),
     required: true
   });
 }

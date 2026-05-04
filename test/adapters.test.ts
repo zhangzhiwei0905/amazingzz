@@ -45,6 +45,15 @@ describe("adapters", () => {
     expect((config.model_providers as any).amazingzz.env_key).toBe("AMAZINGZZ_API_KEY");
   });
 
+  it("writes Codex config without creating other client configs", async () => {
+    await codexAdapter.setup({ ...setupContext, homeDir });
+
+    await expect(fs.access(path.join(homeDir, ".codex", "config.toml"))).resolves.toBeUndefined();
+    await expect(fs.access(path.join(homeDir, ".claude", "settings.json"))).rejects.toThrow();
+    await expect(fs.access(path.join(homeDir, ".hermes", "config.yaml"))).rejects.toThrow();
+    await expect(fs.access(path.join(homeDir, ".openclaw", "openclaw.json"))).rejects.toThrow();
+  });
+
   it("merges OpenClaw config without deleting unrelated fields", async () => {
     const filePath = path.join(homeDir, ".openclaw", "openclaw.json");
     await fs.mkdir(path.dirname(filePath), { recursive: true });
