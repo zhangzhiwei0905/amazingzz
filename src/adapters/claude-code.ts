@@ -1,4 +1,4 @@
-import { PROVIDER_ID } from "../constants.js";
+import { CLAUDE_CODE_MODEL } from "../constants.js";
 import type { Adapter, ApplyResult, CheckContext, CheckResult, SetupContext } from "../types.js";
 import { readJson, writeJsonWithBackup } from "../utils/fs.js";
 import { configPath } from "../utils/paths.js";
@@ -21,11 +21,13 @@ export const claudeCodeAdapter: Adapter = {
     const env = ensureObject(config, "env");
     const baseUrl = normalizeAnthropicBaseUrl(context.baseUrl);
 
+    const claudeModel = context.claudeCodeModel || CLAUDE_CODE_MODEL;
+
     env[ANTHROPIC_BASE_URL] = baseUrl;
     env[ANTHROPIC_API_KEY] = context.apiKey;
     env[ANTHROPIC_AUTH_TOKEN] = context.apiKey;
-    env[ANTHROPIC_MODEL] = context.model;
-    env[ANTHROPIC_CUSTOM_MODEL_OPTION] = context.model;
+    env[ANTHROPIC_MODEL] = claudeModel;
+    env[ANTHROPIC_CUSTOM_MODEL_OPTION] = claudeModel;
 
     const backupPath = await writeJsonWithBackup(filePath, config, context.dryRun);
     return {

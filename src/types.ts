@@ -13,6 +13,7 @@ export interface SetupContext {
   homeDir: string;
   network: boolean;
   allowNativeHermes?: boolean;
+  claudeCodeModel?: string;
 }
 
 export interface ApplyResult {

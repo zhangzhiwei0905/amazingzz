@@ -2,7 +2,7 @@
 import { Command, Option } from "commander";
 import { checkbox, input, password } from "@inquirer/prompts";
 import { adapters } from "./adapters/index.js";
-import { API_KEY_ENV, DEFAULT_MODEL, DEFAULT_TARGETS } from "./constants.js";
+import { API_KEY_ENV, CLAUDE_CODE_MODEL, DEFAULT_MODEL, DEFAULT_TARGETS } from "./constants.js";
 import type { ApplyResult, CheckResult, Target } from "./types.js";
 import { persistApiKey } from "./utils/env.js";
 import { getHomeDir } from "./utils/paths.js";
@@ -20,7 +20,8 @@ program
   .description("Configure supported clients")
   .option("--base-url <url>", "AmazingZZ gateway base URL")
   .option("--api-key <key>", "AmazingZZ API key")
-  .option("--model <model>", "Default model")
+  .option("--model <model>", "Default OpenAI/GPT model for Codex, OpenClaw, and Hermes", DEFAULT_MODEL)
+  .option("--claude-code-model <model>", "Claude-facing model name for Claude Code", CLAUDE_CODE_MODEL)
   .option("--targets <targets>", "Comma-separated targets: codex,openclaw,hermes,claude-code")
   .option("--yes", "Run non-interactively; requires base URL and API key")
   .option("--dry-run", "Print what would change without writing files")
@@ -34,6 +35,7 @@ program
     const apiKey = await getRequiredValue("api_key", options.apiKey, options.yes, true);
     const model = await getModelValue(options.model, options.yes);
     const baseUrl = normalizeBaseUrl(baseUrlInput);
+    const claudeCodeModel = String(options.claudeCodeModel || CLAUDE_CODE_MODEL).trim() || CLAUDE_CODE_MODEL;
 
     const envMessage = await persistApiKey(apiKey, homeDir, Boolean(options.dryRun));
     const results: ApplyResult[] = [];
@@ -46,7 +48,8 @@ program
         yes: Boolean(options.yes),
         homeDir: targetHomeDir(target, homeDir, options.hermesHome),
         network: !options.dryRun,
-        allowNativeHermes: target === "hermes" && Boolean(options.hermesHome)
+        allowNativeHermes: target === "hermes" && Boolean(options.hermesHome),
+        claudeCodeModel
       }));
     }
 
@@ -138,8 +141,28 @@ function printApplyResults(results: ApplyResult[]): void {
   for (const result of results) {
     const backup = result.backupPath ? ` backup=${result.backupPath}` : "";
     const mode = result.apiMode ? ` mode=${result.apiMode}` : "";
-    console.log(`[${result.status}] ${result.target}: ${result.message}`);
+    console.log(`${statusIcon(result.status)} ${targetLabel(result.target)}${result.status === "pass" ? "已配置完成" : result.status === "warn" ? "配置有提示" : "配置失败"}`);
+    console.log(`    ${result.message}`);
     console.log(`    path=${result.path}${mode}${backup}`);
+  }
+}
+
+function statusIcon(status: ApplyResult["status"]): string {
+  if (status === "pass") return "✅";
+  if (status === "warn") return "⚠️";
+  return "❌";
+}
+
+function targetLabel(target: Target): string {
+  switch (target) {
+    case "claude-code":
+      return "Claude Code";
+    case "openclaw":
+      return "OpenClaw";
+    case "hermes":
+      return "Hermes";
+    case "codex":
+      return "Codex";
   }
 }
 

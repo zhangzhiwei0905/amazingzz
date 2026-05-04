@@ -7,7 +7,7 @@ import { claudeCodeAdapter } from "../src/adapters/claude-code.js";
 import { codexAdapter } from "../src/adapters/codex.js";
 import { hermesAdapter } from "../src/adapters/hermes.js";
 import { openClawAdapter } from "../src/adapters/openclaw.js";
-import { DEFAULT_MODEL } from "../src/constants.js";
+import { CLAUDE_CODE_MODEL, DEFAULT_MODEL } from "../src/constants.js";
 import { parseToml } from "../src/config/toml.js";
 
 let homeDir: string;
@@ -61,18 +61,31 @@ describe("adapters", () => {
     expect(config.agents.defaults.model.primary).toBe(`amazingzz/${DEFAULT_MODEL}`);
   });
 
-
-  it("writes Claude Code Anthropic-compatible env settings", async () => {
+  it("writes Claude Code Anthropic-compatible env settings with Claude-facing model", async () => {
     await claudeCodeAdapter.setup({ ...setupContext, homeDir });
     const config = JSON.parse(await fs.readFile(path.join(homeDir, ".claude", "settings.json"), "utf8"));
 
     expect(config.env.ANTHROPIC_BASE_URL).toBe("https://gateway.example.com");
     expect(config.env.ANTHROPIC_API_KEY).toBe("test-key");
     expect(config.env.ANTHROPIC_AUTH_TOKEN).toBe("test-key");
-    expect(config.env.ANTHROPIC_MODEL).toBe(DEFAULT_MODEL);
-    expect(config.env.ANTHROPIC_CUSTOM_MODEL_OPTION).toBe(DEFAULT_MODEL);
+    expect(config.env.ANTHROPIC_MODEL).toBe(CLAUDE_CODE_MODEL);
+    expect(config.env.ANTHROPIC_CUSTOM_MODEL_OPTION).toBe(CLAUDE_CODE_MODEL);
   });
-  it("writes Hermes named custom provider", async () => {
+
+  it("preserves unrelated Claude Code settings and existing env values", async () => {
+    const filePath = path.join(homeDir, ".claude", "settings.json");
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify({ alwaysThinkingEnabled: true, env: { KEEP_ME: "yes" } }), "utf8");
+
+    await claudeCodeAdapter.setup({ ...setupContext, homeDir });
+    const config = JSON.parse(await fs.readFile(filePath, "utf8"));
+
+    expect(config.alwaysThinkingEnabled).toBe(true);
+    expect(config.env.KEEP_ME).toBe("yes");
+    expect(config.env.ANTHROPIC_MODEL).toBe(CLAUDE_CODE_MODEL);
+  });
+
+  it("writes Hermes named custom provider without creating other client configs", async () => {
     await hermesAdapter.setup({ ...setupContext, homeDir });
     const config = YAML.parse(await fs.readFile(path.join(homeDir, ".hermes", "config.yaml"), "utf8"));
 
@@ -81,5 +94,8 @@ describe("adapters", () => {
     expect(config.custom_providers[0].name).toBe("amazingzz");
     expect(config.custom_providers[0].base_url).toBe("https://gateway.example.com/v1");
     expect(config.custom_providers[0].api_key).toBe("test-key");
+    await expect(fs.access(path.join(homeDir, ".claude", "settings.json"))).rejects.toThrow();
+    await expect(fs.access(path.join(homeDir, ".codex", "config.toml"))).rejects.toThrow();
+    await expect(fs.access(path.join(homeDir, ".openclaw", "openclaw.json"))).rejects.toThrow();
   });
 });
